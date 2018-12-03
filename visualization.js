@@ -29,10 +29,24 @@ function drawData(){
     };
   });
 
-  console.log(data);
+// Workaround to filter out NaN amounts
+// TODO: Fix for large numbers
+
+  var corruptDatapoints = new Array();
+  for (var i = 0; i < data.length;i++ ){
+    if(Number.isNaN(data[i].amount)){
+      console.log("Datapoint corrupt"+ i +": " + data[i].amount + "\t\t\t" + data[i].dateSend);
+      corruptDatapoints.push(i);
+    }
+  }
+
+  for(var i = corruptDatapoints.length-1; i >= 0; i--){
+    console.log("splicing datapoint " + corruptDatapoints[i]);
+    data.splice(corruptDatapoints[i],1);
+  }
 
   var height = 300;
-  var width = 500;
+  var width = 800;
   var margin = {left:50,right:50,top:40,bottom:20};
 
   var max = d3.max(data, function(d){return Math.abs(d.amount);});
