@@ -13,25 +13,11 @@ function drawData(){
 
   var ssv = d3.dsvFormat(";");  // semicolon seperated values
 
-  var data = ssv.parse(fileContent, function(d){
-    return{
-      dateSend:       parseDate(d.Buchung),
-      dateValidated:  parseDate(d.Valuta),
-      senderReceiver: d[ 'Sender / Empfänger' ],
-      iban:           +d[ 'IBAN / Konto-Nr.' ],
-      bic:            +d[ 'BIC / BLZ' ],
-      text:           d.Buchungstext,
-      use:            d.Verwendungszweck,
-      category:       d.Kategorie,
-      tags:           d[ 'Stichwörter' ],
-      revenue:        +d[ 'Umsatz geteilt' ].replace(",","."),
-      amount:         +d[ 'Betrag in EUR' ].replace(",",".")
-    };
-  });
+  function convertFromGermanNumber(germanNumber){
+    return germanNumber.replace(".","").replace(",",".");
+}
 
-// Workaround to filter out NaN amounts
-// TODO: Fix for large numbers
-
+function CheckForCorruptAmounts(){
   var corruptDatapoints = new Array();
   for (var i = 0; i < data.length;i++ ){
     if(Number.isNaN(data[i].amount)){
@@ -44,6 +30,25 @@ function drawData(){
     console.log("splicing datapoint " + corruptDatapoints[i]);
     data.splice(corruptDatapoints[i],1);
   }
+}
+
+  var data = ssv.parse(fileContent, function(d){
+    return{
+      dateSend:       parseDate(d.Buchung),
+      dateValidated:  parseDate(d.Valuta),
+      senderReceiver: d[ 'Sender / Empfänger' ],
+      iban:           +d[ 'IBAN / Konto-Nr.' ],
+      bic:            +d[ 'BIC / BLZ' ],
+      text:           d.Buchungstext,
+      use:            d.Verwendungszweck,
+      category:       d.Kategorie,
+      tags:           d[ 'Stichwörter' ],
+      revenue:        +convertFromGermanNumber(d[ 'Umsatz geteilt' ]),
+      amount:         +convertFromGermanNumber(d[ 'Betrag in EUR' ])
+    };
+  });
+
+  CheckForCorruptAmounts();
 
   var height = 300;
   var width = 800;
@@ -52,8 +57,6 @@ function drawData(){
   var max = d3.max(data, function(d){return Math.abs(d.amount);});
   var minDate = d3.min(data, function(d){return d.dateSend;});
   var maxDate = d3.max(data, function(d){return d.dateSend;});
-
-  console.log("max: " + max + "\nminDate: " + minDate + "\nmaxDate: " + maxDate);
 
   var y = d3.scaleLinear()
               .domain([0,max])
